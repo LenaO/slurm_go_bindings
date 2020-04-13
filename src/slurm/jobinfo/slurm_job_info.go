@@ -67,8 +67,27 @@ inline int64_t int64_ptr(int16_t* pointer) {
  void free_job_buffer(void* buffer){	
 
 	slurm_free_job_info_msg ((struct job_info_msg*)buffer);
-  }
+}
+ 
+struct job_info_msg *get_user_job_info(uint32_t id){
 
+	struct job_info_msg* job_buffer;
+     	if( slurm_load_job_user(&job_buffer, id, SHOW_DETAIL))
+     		return NULL;
+ 	return job_buffer;
+
+}
+
+int64_t get_job_endtime(int32_t jobid){
+	time_t end_time;
+
+	if(slurm_get_end_time (jobid, &end_time))
+		return -1;
+        else
+		return end_time;
+
+
+}
 
 int char_len(char* c) {
 	uint i = 0;
@@ -920,6 +939,13 @@ func Get_job_runtime(job Job_info) time.Duration{
 	}
 	return end_time.Sub(start_time)
 }
+
+func Get_job_endtime (id uint32 ) time.Time {
+	c_time := C.get_job_endtime(C.int32_t(id))
+	return time.Unix(int64(c_time),0)
+
+}
+
 func Get_all_jobs() Job_info_msg {
 	var go_job_buffer Job_info_msg
 	c_job_buffer := C.get_job_info()
@@ -963,4 +989,45 @@ func Get_job( id uint32) Job_info_msg {
 	C.slurm_free_job_info_msg (c_job_buffer);
 
 	return go_job_buffer
+}
+
+func Get_user_jobs (name string) Job_info_msg {
+
+
+	var go_job_buffer Job_info_msg
+	user, err := user.Lookup(name);
+
+	if  err  != nil {
+		fmt.Printf("Error %s\n", err.Error())
+		go_job_buffer.Last_update = int64(0)
+		go_job_buffer.Record_count = uint32(0)
+		go_job_buffer.Error_code =  C.ESLURMD_UID_NOT_FOUND
+
+		return go_job_buffer
+
+
+	}
+
+	userid , _ := strconv.Atoi(user.Uid)
+	c_job_buffer := C.get_user_job_info(C.uint32_t(userid))
+
+	if c_job_buffer == nil {
+		go_job_buffer.Last_update = int64(0)
+		go_job_buffer.Record_count = uint32(0)
+		go_job_buffer.Error_code = uint32(C.slurm_get_errno())
+		return go_job_buffer
+	}
+	go_job_buffer.Last_update = int64(c_job_buffer.last_update)
+	go_job_buffer.Record_count = uint32(c_job_buffer.record_count)
+	go_job_buffer.Job_list =make([]Job_info,c_job_buffer.record_count, c_job_buffer.record_count)
+	for i:=uint32(0); i<go_job_buffer.Record_count; i++ {
+		job := C.job_from_list(c_job_buffer,  C.int(i))
+		go_job :=  Job_info_convert_c_to_go(job)
+		go_job_buffer.Job_list[i]=go_job
+	}
+	C.slurm_free_job_info_msg (c_job_buffer);
+
+	return go_job_buffer
+
+
 }

@@ -48,6 +48,7 @@ inline int64_t int64_ptr(int16_t* pointer) {
     return 0;}
     return *pointer;
 }
+
 #endif
 struct submit_response_msg *submit_job(struct job_descriptor *desc)
 {
@@ -60,11 +61,21 @@ struct submit_response_msg *submit_job(struct job_descriptor *desc)
 	return resp_msg;
 
 }
+int update_job (struct job_descriptor *msg) {
+
+	 return slurm_update_job (msg);
+}
+
+void free_submit_response_msg(struct submit_response_msg *msg)
+{
+	 slurm_free_submit_response_response_msg(msg);
+}
 */
 import "C"
 
 import "fmt"
 import "unsafe"
+import "slurm/jobinfo" 
 
 type Job_descriptor struct {
 	Account string;
@@ -425,6 +436,15 @@ func Job_descriptor_convert_c_to_go(c_struct *C.struct_job_descriptor) Job_descr
 	 fmt.Printf("%s:\t %d\n","x11 target port", go_struct.X11_target_port)
 }
 
+type Update_job_options struct {
+	Partition string;
+	Qos string;
+	Num_tasks uint32;
+	Ntasks_per_node  uint16;
+	Ntasks_per_socket uint16;
+	Ntasks_per_core uint16;
+
+}
 
 type Submit_response_msg struct {
 	Job_id uint32;
@@ -577,17 +597,12 @@ func Submit_job (go_struct *Job_descriptor)  Submit_response_msg {
 	if go_struct.End_time!= 0 {
 		c_struct.end_time = C.int64_t(go_struct.End_time)
 	}
-/*	if go_struct.Env_size!= 0 {
-		c_struct.env_size = C.uint32_t(go_struct.Env_size)
-	}
-	*/
 	if len(go_struct.Environment) > 0 {
 		c_struct.env_size = C.uint32_t(len(go_struct.Environment))
 		cArray   := C.malloc(C.size_t(C.size_t(len(go_struct.Environment))*C.size_t(unsafe.Sizeof(uintptr(0)))))
 		 a := (*[1<<30 - 1]*C.char)(cArray )
-		 for i := 0; i < len(go_struct.Argv); i++ {
+		 for i := 0; i < len(go_struct.Environment); i++ {
 			a[i]=  C.CString(go_struct.Environment[i])
-
 			defer C.free(unsafe.Pointer(a[i]))
 		}
 		c_struct.environment=(**C.char)(cArray)
@@ -917,6 +932,8 @@ func Submit_job (go_struct *Job_descriptor)  Submit_response_msg {
 	}
 
 	c_msg := C.submit_job(&c_struct)
+
+	defer C.free_submit_response_msg(c_msg)
 	if c_msg == nil{
 		go_msg := Submit_response_msg{}
 		go_msg.Job_id = 1<<31-1
@@ -924,6 +941,53 @@ func Submit_job (go_struct *Job_descriptor)  Submit_response_msg {
 		return go_msg
 	}
 	go_msg :=  submit_response_msg_convert_c_to_go(c_msg)
+
 	return go_msg
+
+}
+
+
+func  Update_job (update_info Update_job_options, JobId uint32 ) uint32 {
+
+	var c_struct C.struct_job_descriptor
+	C.slurm_init_job_desc_msg(&c_struct)
+	if update_info.Partition !="" {
+		partition_s  := C.CString(update_info.Partition)
+		defer C.free(unsafe.Pointer(partition_s))
+		c_struct.partition = partition_s
+	}
+	if update_info.Qos != "" {
+		qos_s  := C.CString(update_info.Qos)
+		defer C.free(unsafe.Pointer(qos_s))
+		c_struct.qos = qos_s
+	}
+	if update_info.Num_tasks != 0 {
+		c_struct.num_tasks = C.uint32_t(update_info.Num_tasks)
+	}
+	if update_info.Ntasks_per_core != 0 {
+		c_struct.ntasks_per_core = C.uint16_t(update_info.Ntasks_per_core)
+	}
+
+	if update_info.Ntasks_per_node != 0 {
+		c_struct.ntasks_per_node = C.uint16_t(update_info.Ntasks_per_node)
+	}
+	if update_info.Ntasks_per_socket != 0 {
+		c_struct.ntasks_per_socket = C.uint16_t(update_info.Ntasks_per_socket)
+	}
+	job_list := job_info.Get_job(uint32(JobId))
+
+	if job_list.Error_code != 0 {
+		return uint32(job_list.Error_code)
+	}
+
+	job := job_list.Job_list[0]
+	if job.Job_state != C.JOB_PENDING {
+		return uint32(C.ESLURM_JOB_NOT_PENDING)
+	}
+	c_struct.job_id = C.uint32_t(JobId)
+
+	err := C.update_job(&c_struct)
+
+	return uint32(err)
 
 }
