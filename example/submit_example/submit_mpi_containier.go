@@ -59,11 +59,11 @@ func main(){
 	groupid , _ := strconv.Atoi(user.Gid)
 
 	job_desc.Group_id= uint32(groupid)
-	job_desc.Name = "test_job"
+	job_desc.Name = "mpi_job"
 	job_desc.Partition="long"
 	job_desc.Time_limit = uint32(60)
 	job_desc.Min_nodes =uint32(2)
-			job_desc.Num_tasks = uint32(2)
+	job_desc.Num_tasks = uint32(2)
 	job_desc.Std_out = ("./%j-out.txt")
 	job_desc.Std_err = ("./%j-err.txt")
 	job_desc.Work_dir = dir
@@ -86,7 +86,7 @@ func main(){
 	}
 	job := job_list.Job_list[0]
 
-	fmt.Printf("job is %s\n",job.Job_stateS)
+	fmt.Printf("job %d is %s\n",answer.Job_id, job.Job_stateS)
 	state := job.Job_stateS
 	for state == "Pending" || state == "Running" {
 		time.Sleep(2 * time.Second)
@@ -101,11 +101,11 @@ func main(){
 
 		state = job.Job_stateS
 
-		fmt.Printf("job is %s\n",job.Job_stateS)
+		fmt.Printf("job %d is %s\n",answer.Job_id, job.Job_stateS)
 
 
 	}
 
-	fmt.Printf("Total runtime  %s\n",job_info.Get_job_runtime(job).String() )
+	fmt.Printf("Total runtime Job %d:  %s\n",job.Job_id, job_info.Get_job_runtime(job).String() )
 
 }

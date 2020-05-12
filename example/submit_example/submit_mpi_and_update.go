@@ -59,16 +59,16 @@ func main(){
 	groupid , _ := strconv.Atoi(user.Gid)
 
 	job_desc.Group_id= uint32(groupid)
-	job_desc.Name = "test_job"
+	job_desc.Name = "flex_mpi_job"
 	job_desc.Partition="long"
 	job_desc.Time_limit = uint32(60)
-//	job_desc.Min_nodes =uint32(2)
 	job_desc.Ntasks_per_node = uint16(1)
 	job_desc.Num_tasks = uint32(2)
 	job_desc.Std_out = ("./%j-out.txt")
 	job_desc.Std_err = ("./%j-err.txt")
 	job_desc.Work_dir = dir
 
+	time.Sleep(3 * time.Second)
 	answer := submit_job.Submit_job(&job_desc)
 	if(answer.Error_code != 0) {
 		msg := slurm.GetErrorString(answer.Error_code)
@@ -88,16 +88,14 @@ func main(){
 	}
 	job := job_list.Job_list[0]
 
-	fmt.Printf("job is %s\n",job.Job_stateS)
+	fmt.Printf("job %d is %s\n", answer.Job_id, job.Job_stateS)
 	state := job.Job_stateS
 	if state == "Pending" {
-		fmt.Printf("Move job to another partition \n")
+		fmt.Printf("Move job %d to another partition \n", answer.Job_id)
 		var ops submit_job.Update_job_options
 
 		ops.Qos = "shortjobs"
 		ops.Partition = "short"
-		ops.Min_nodes = 1
-//		ops.Ntasks_per_node = 2
 		err2 := submit_job.Update_job(ops, uint32(answer.Job_id))
 		if err2!= uint32(0) {
 			fmt.Printf("error %s \n", slurm.GetErrorString(err2))
@@ -117,12 +115,12 @@ func main(){
 
 		state = job.Job_stateS
 
-		fmt.Printf("job is %s\n",job.Job_stateS)
+		fmt.Printf("job %d is %s\n",answer.Job_id, job.Job_stateS)
 
 
 	}
 
-	fmt.Printf("Total runtime  %s\n",job_info.Get_job_runtime(job).String() )
+	fmt.Printf("Total runtime Job %d  %s\n",job.Job_id,  job_info.Get_job_runtime(job).String() )
 }
 
 
