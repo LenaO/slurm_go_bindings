@@ -9,7 +9,7 @@ import "strconv"
 import "fmt"
 func main(){
 	job_desc :=  submit_job.Job_descriptor{}
-	job_desc.Script = "#! /bin/bash\n ls \n env | grep SLURM "
+	job_desc.Script = "#! /bin/bash\n hostname \n env | grep SLURM "
 	dir, _ := os.Getwd()
 
 	user, _:= user.Current()
