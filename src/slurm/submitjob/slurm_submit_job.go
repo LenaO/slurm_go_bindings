@@ -443,7 +443,8 @@ type Update_job_options struct {
 	Ntasks_per_node  uint16;
 	Ntasks_per_socket uint16;
 	Ntasks_per_core uint16;
-
+	Min_nodes  uint32;
+	Max_nodes uint32;
 }
 
 type Submit_response_msg struct {
@@ -546,7 +547,7 @@ func Submit_job (go_struct *Job_descriptor)  Submit_response_msg {
 		c_struct.clusters=clusters_s
 	}
 	if go_struct.Cluster_features!= "" {
-		cluster_features_s :=C.CString(go_struct.Cluster_features)
+		cluster_features_s := C.CString(go_struct.Cluster_features)
 		defer C.free(unsafe.Pointer(cluster_features_s))
 		c_struct.cluster_features=cluster_features_s
 	}
@@ -974,6 +975,15 @@ func  Update_job (update_info Update_job_options, JobId uint32 ) uint32 {
 	if update_info.Ntasks_per_socket != 0 {
 		c_struct.ntasks_per_socket = C.uint16_t(update_info.Ntasks_per_socket)
 	}
+
+	if update_info.Max_nodes != 0 {
+		c_struct.max_nodes = C.uint32_t(update_info.Max_nodes)
+	}
+	if update_info.Min_nodes != 0 {
+		c_struct.min_nodes = C.uint32_t(update_info.Min_nodes)
+	}
+
+
 	job_list := job_info.Get_job(uint32(JobId))
 
 	if job_list.Error_code != 0 {

@@ -1,0 +1,18 @@
+Bootstrap: docker
+From: ubuntu:latest
+
+%files
+   openmp_example.c  /opt
+
+%environment
+    export OMPI_DIR=/home0/opt/openmpi
+    export SINGULARITY_OMPI_DIR=$OMPI_DIR
+    export SINGULARITYENV_APPEND_PATH=$OMPI_DIR/bin
+    export SINGULAIRTYENV_APPEND_LD_LIBRARY_PATH=$OMPI_DIR/lib
+
+%post
+    echo "Installing required packages..."
+    apt-get update && apt-get install -y wget git bash gcc gfortran g++ make file
+
+    echo "Compiling the MPI application..."
+    cd /opt  && gcc -o openmp_example  -fopenmp  openmp_example.c

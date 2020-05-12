@@ -6,14 +6,14 @@ import "fmt"
 import "os" 
 func main(){
 	if len(os.Args)<2 {
-		fmt.Printf("Please specify Job ID\n")
+		fmt.Printf("Please specify node name\n")
 		return
 	}
 	name:= os.Args[1]
 
 	node_list := node_info.Get_node_info(name)
 	if(node_list.Error_code !=0) {
-		msg := slurm.GetErrorString(answer.Error_code)
+		msg := slurm.GetErrorString(node_list.Error_code)
 		fmt.Printf("Error: %s\n" ,msg)
 		return
 	}

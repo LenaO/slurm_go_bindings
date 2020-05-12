@@ -506,7 +506,7 @@ func Reason_to_string(state uint16) string{
 	return "unkown reason"
 
 }
-func State_to_string(state uint32) string{
+func state_to_string(state uint32) string{
 	switch s := C.uint32_t(state); s {
 		case C.JOB_PENDING:
 			return "Pending"		/* queued waiting for initiation */
@@ -589,6 +589,7 @@ type Job_info struct {
 	Group_id uint32;
 	Job_id uint32;
 	Job_state uint32;
+	Job_stateS string;
 	Last_sched_eval int64;
 	Licenses string;
 	Max_cpus uint32;
@@ -715,6 +716,7 @@ func Job_info_convert_c_to_go(c_struct *C.struct_job_info) Job_info{
 	go_struct.Group_id = uint32(c_struct.group_id)
 	go_struct.Job_id = uint32(c_struct.job_id)
 	go_struct.Job_state = uint32(c_struct.job_state)
+	go_struct.Job_stateS = state_to_string(uint32(c_struct.job_state))
 	go_struct.Last_sched_eval = int64(c_struct.last_sched_eval)
 	go_struct.Licenses = C.GoString(c_struct.licenses)
 	go_struct.Max_cpus = uint32(c_struct.max_cpus)

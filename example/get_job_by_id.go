@@ -30,7 +30,7 @@ func main(){
 	for i := range job_list.Job_list {
 		job := job_list.Job_list[i]
 		fmt.Printf("%d\t%s\t%s\t%s %s\t%s\t%s\t%s\t%d\n" , 
-		job.Job_id, job.Name, job.Partition, job.User_name,job_info.Get_job_runtime(job).String(), job_info.State_to_string(job.Job_state) ,
+		job.Job_id, job.Name, job.Partition, job.User_name,job_info.Get_job_runtime(job).String(), job.Job_stateS, 
 		job_info.Reason_to_string(job.State_reason), job.Nodes,job.Priority)
 	}
 
