@@ -64,3 +64,58 @@ func Cancel_job( JobId uint32) error{
   }
   return nil
 }
+
+type Acc_Job_info struct {
+  JobId uint32;
+  User string;
+  Account string;
+  State string;
+  JobName string;
+}
+ var sacct_format_string string
+
+func parse_sacct_output(input string) []Acc_Job_info {
+  var job_list []Acc_Job_info
+  lines := strings.Split(string(input), "\n")
+  fmt.Printf("len %d\n",len(lines)-1)
+  for l := range lines {
+    var job_info Acc_Job_info
+    elements := strings.Split(lines[l], "|")
+    if len(elements) < 5 {
+      break //Well, this is not clean, but keep it like this for Now
+    }
+    id, ierr := strconv.Atoi(elements[0])
+
+    if ierr != nil {
+      break  //we have no useable entry here but something like 323.batch . Ignore these for now
+    }
+    job_info.JobId =uint32(id)
+    job_info.User = elements[1]
+    job_info.Account = elements[2]
+    job_info.State = elements[3]
+    job_info.JobName =elements[4]
+    job_list = append(job_list, job_info)
+  }
+  return job_list
+}
+
+func Get_job_info_accounting(JobId uint32 ) ([]Acc_Job_info, error) {
+
+  sacct_format_string = "JobId,user,account,state,JobName"
+	find_slurm_path()
+  if slurm_path == "" {
+      return nil, errors.New("Cannot find slurm executable")
+  }
+  path := filepath.Join(slurm_path,"bin","sacct")
+  cmd:= exec.Command(path, "-j", strconv.FormatInt(int64(JobId), 10),"--format", sacct_format_string,"-p","-n")
+  //fmt.Printf(cmd.String())
+  out, err := cmd.CombinedOutput()
+  if err!= nil {
+    msg := string(out) + err.Error()
+    return nil, errors.New(msg)
+  }
+  list := parse_sacct_output(string(out))
+
+
+  return list, nil
+}

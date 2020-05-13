@@ -5,7 +5,7 @@ package job_info
 #include<slurm/slurm.h>
 
 
-inline uint8_t uint8_ptr(uint8_t* pointer) { 
+inline uint8_t uint8_ptr(uint8_t* pointer) {
     if (NULL == pointer) {
     return -1;}
     return *pointer;
@@ -60,15 +60,15 @@ inline int64_t int64_ptr(int16_t* pointer) {
 	}
 	return job_buffer;
  }
- 
+
  struct job_info* job_from_list(struct job_info_msg *list, int i){
 	 return &list->job_array[i];
 }
- void free_job_buffer(void* buffer){	
+ void free_job_buffer(void* buffer){
 
 	slurm_free_job_info_msg ((struct job_info_msg*)buffer);
 }
- 
+
 struct job_info_msg *get_user_job_info(uint32_t id){
 
 	struct job_info_msg* job_buffer;
